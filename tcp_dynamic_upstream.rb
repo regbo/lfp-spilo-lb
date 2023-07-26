@@ -57,8 +57,8 @@ def load_route_list
   members = data["members"]
   if members
     for member in members do
-      state = member["state"]
-      if state&.casecmp?("leader")
+      role = member["role"]
+      if role && role.downcase == "leader"
         route_list <<  [member["name"] + ":" + member["port"].to_s]
       end
     end
