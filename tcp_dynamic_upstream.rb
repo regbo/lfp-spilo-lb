@@ -3,20 +3,19 @@ $route_list_cache_key = "route_list"
 $route_list_load_time_cache_key = "route_list_load_time"
 
 $mutex = Mutex.new :global => true
-$cache = Cache.new :namespace => $namespace, :size_mb => 1
+$cache = Cache.new :namespace => $namespace, :size_mb => 128
 
-def get_route (locked = false)
+def get_route
   route_list = get_route_list
   if route_list == nil
-    if !locked
-      $mutex.lock
-      begin
-        return get_route true
-      ensure
-        $mutex.unlock
+    $mutex.lock
+    begin
+      route_list = get_route_list
+      if route_list == nil
+        route_list = load_route_list
       end
-    else
-      route_list = load_route_list
+    ensure
+      $mutex.unlock
     end
   end
   if route_list.length == 0
@@ -27,14 +26,16 @@ def get_route (locked = false)
 end
 
 def get_route_list
-  route_list = $cache[$route_list_cache_key]&.split(",")
+  route_list = $cache[$route_list_cache_key]
   if route_list == nil
     return nil
   end
+  route_list = route_list.split(",")
   route_list_load_time = $cache[$route_list_load_time_cache_key]
   if route_list_load_time == nil
     return nil
   end
+  route_list_load_time = route_list_load_time.to_i
   route_list_load_time_elapsed = ((Time.now.to_f * 1000).to_i - route_list_load_time.to_i)
   if route_list_load_time_elapsed > ENV["NGINX_UPSTREAM_HTTP_SERVER_CACHE_TTL"].to_i
     return nil
@@ -56,16 +57,16 @@ def load_route_list
   data = JSON::parse(body)
   route_list = Array.new
   members = data["members"]
-  if members
+  if members != nil
     for member in members do
       state = member["role"]
-      if state && state.casecmp?("leader")
+      if state != nil && state.downcase == "leader"
         route_list << (member["name"] + ":" + member["port"].to_s)
       end
     end
   end
   $cache[$route_list_cache_key] = route_list.join(",")
-  $cache[$route_list_load_time_cache_key] = (Time.now.to_f * 1000).to_s
+  $cache[$route_list_load_time_cache_key] = (Time.now.to_f * 1000).to_i.to_s
   route_list
 end
 

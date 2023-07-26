@@ -23,4 +23,4 @@ RUN curl -L https://github.com/a8m/envsubst/releases/latest/download/envsubst-`u
 COPY nginx.conf /usr/local/nginx/conf
 COPY tcp_dynamic_upstream.rb /usr/local/nginx/hook
 
-CMD ["bash", "-c", "CONF_FILE=$(mktemp /tmp/nginx-conf-XXXXX) && envsubst -no-unset -no-empty -i /usr/local/nginx/conf/nginx.conf > $CONF_FILE && /usr/local/nginx/sbin/nginx -c $CONF_FILE"]
+CMD ["bash", "-c", "mkdir -p /tmp/nginx/cores/ && CONF_FILE=$(mktemp /tmp/nginx-conf-XXXXX) && envsubst -no-unset -no-empty -i /usr/local/nginx/conf/nginx.conf > $CONF_FILE && /usr/local/nginx/sbin/nginx -c $CONF_FILE && find /tmp/nginx/cores/ -type f | xargs tail -n +1"]
