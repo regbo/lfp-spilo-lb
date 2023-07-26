@@ -60,7 +60,7 @@ def load_route_list
     for member in members do
       state = member["role"]
       if state && state.casecmp?("leader")
-        route_list << (member["host"] + ":" + member["port"].to_s)
+        route_list << (member["name"] + ":" + member["port"].to_s)
       end
     end
   end
