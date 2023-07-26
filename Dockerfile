@@ -19,11 +19,8 @@ RUN curl -L https://github.com/a8m/envsubst/releases/latest/download/envsubst-`u
 	chmod +x envsubst && \
 	mv envsubst /usr/local/bin
 
-RUN curl -L https://raw.githubusercontent.com/eficode/wait-for/v2.2.3/wait-for -o wait-for && \
-    chmod +x wait-for && \
-    mv wait-for /usr/local/bin
 
 COPY nginx.conf /usr/local/nginx/conf
 COPY tcp_dynamic_upstream.rb /usr/local/nginx/hook
 
-CMD ["bash", "-c", "CONF_FILE=$(mktemp /tmp/nginx-conf-XXXXX) && envsubst -no-unset -no-empty -i /usr/local/nginx/conf/nginx.conf > $CONF_FILE && wait-for -t 0 $NGINX_UPSTREAM_HTTP_SERVER -- /usr/local/nginx/sbin/nginx -c $CONF_FILE"]
+CMD ["bash", "-c", "CONF_FILE=$(mktemp /tmp/nginx-conf-XXXXX) && envsubst -no-unset -no-empty -i /usr/local/nginx/conf/nginx.conf > $CONF_FILE && /usr/local/nginx/sbin/nginx -c $CONF_FILE"]
