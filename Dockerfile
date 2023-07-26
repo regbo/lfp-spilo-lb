@@ -1,14 +1,19 @@
 FROM matsumotory/ngx_mruby:master
 
+ADD https://github.com/matsumotory/ngx_mruby/archive/refs/heads/master.zip /tmp/ngx_mruby.zip
+
 RUN cd /usr/local/src/ && \
 	rm -rf ngx_mruby && \
-	git clone https://github.com/matsumotory/ngx_mruby.git
+    unzip /tmp/ngx_mruby.zip -d /tmp/ngx_mruby && \
+	mv /tmp/ngx_mruby/ngx_mruby-master ngx_mruby && \
+    rm /tmp/ngx_mruby.zip
 
 ENV NGINX_CONFIG_OPT_ENV="${NGINX_CONFIG_OPT_ENV} --with-stream --with-stream_ssl_module --with-stream_ssl_preread_module"
 
 RUN cd /usr/local/src/ngx_mruby && \
 	sh build.sh && \
-	make install
+	make install && \
+    rm -rf /usr/local/src/ngx_mruby
 
 RUN curl -L https://github.com/a8m/envsubst/releases/latest/download/envsubst-`uname -s`-`uname -m` -o envsubst && \
 	chmod +x envsubst && \
