@@ -1,0 +1,43 @@
+{
+  "admin": {
+    "disabled": ${CADDY_ADMIN_DISABLED:-true}
+  },
+  "logging": {
+    "logs": {
+      "default": {
+        "level": "${CADDY_LOG_LEVEL:-INFO}"
+      }
+    }
+  },
+  "apps": {
+    "layer4": {
+      "servers": {
+        "server_0": {
+          "listen": [
+            "${CADDY_LISTEN_ADDRESS:-0.0.0.0:5432}"
+          ],
+          "routes": [
+            {
+              "handle": [
+                {
+                  "handler": "proxy",
+                  "upstreams": [
+                    {
+                      "dial": [
+                        {{with $$leader := key "/service/${SCOPE}/leader"}}
+                        {{ $$member := key (print "/service/${SCOPE}/members/" $$leader) | parseJSON  }}
+                        {{ $$member_host_port := print $$member.conn_url | regexReplaceAll "^.*://" "" | regexReplaceAll "/.*" "" }}
+                        "{{ $$member_host_port }}"
+                        {{ end }}
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

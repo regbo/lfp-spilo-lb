@@ -1,26 +1,21 @@
-FROM matsumotory/ngx_mruby:master
+FROM caddy:builder AS builder
 
-ADD https://github.com/matsumotory/ngx_mruby/archive/refs/heads/master.zip /tmp/ngx_mruby.zip
+RUN xcaddy build \
+    --with github.com/mholt/caddy-l4
 
-RUN cd /usr/local/src/ && \
-	rm -rf ngx_mruby && \
-    unzip /tmp/ngx_mruby.zip -d /tmp/ngx_mruby && \
-	mv /tmp/ngx_mruby/ngx_mruby-master ngx_mruby && \
-    rm /tmp/ngx_mruby.zip
+FROM caddy:latest
 
-ENV NGINX_CONFIG_OPT_ENV="${NGINX_CONFIG_OPT_ENV} --with-stream --with-stream_ssl_module --with-stream_ssl_preread_module"
+COPY --from=builder /usr/bin/caddy /usr/bin/caddy
 
-RUN cd /usr/local/src/ngx_mruby && \
-	sh build.sh && \
-	make install && \
-    rm -rf /usr/local/src/ngx_mruby
+RUN apk add --no-cache bash consul-template jq
 
-RUN curl -L https://github.com/a8m/envsubst/releases/latest/download/envsubst-`uname -s`-`uname -m` -o envsubst && \
-	chmod +x envsubst && \
-	mv envsubst /usr/local/bin
+RUN wget https://github.com/a8m/envsubst/releases/download/v1.2.0/envsubst-`uname -s`-`uname -m` -O envsubst && \
+    chmod +x envsubst && \
+    mv envsubst /usr/local/bin
 
+COPY run_caddy /run_caddy
+RUN chmod +x /run_caddy
 
-COPY nginx.conf /usr/local/nginx/conf
-COPY tcp_dynamic_upstream.rb /usr/local/nginx/hook
+COPY caddy.config.template.json /caddy.config.template.json
 
-CMD ["bash", "-c", "mkdir -p /tmp/nginx/cores/ && CONF_FILE=$(mktemp /tmp/nginx-conf-XXXXX) && envsubst -no-unset -no-empty -i /usr/local/nginx/conf/nginx.conf > $CONF_FILE && /usr/local/nginx/sbin/nginx -c $CONF_FILE && find /tmp/nginx/cores/ -type f | xargs tail -n +1"]
+CMD ["/run_caddy"]

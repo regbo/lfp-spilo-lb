@@ -1,0 +1,12 @@
+#! /bin/bash
+
+set -e
+
+envsubst -i /caddy.config.template.json -o /caddy.config.consul-template.json -no-unset -no-empty
+
+if [ -z "$CONSUL_TEMPLATE_LOG_LEVEL" ]
+then
+  ADDITIONAL_ARGUMENTS="$ADDITIONAL_ARGUMENTS -log-level $CONSUL_TEMPLATE_LOG_LEVEL"
+fi
+
+consul-template -template '/caddy.config.consul-template.json:/caddy.config.json' -exec 'cat /caddy.config.json | jq . && caddy run --config /caddy.config.json --watch' $ADDITIONAL_ARGUMENTS
