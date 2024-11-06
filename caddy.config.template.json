@@ -47,7 +47,13 @@
           {
             "issuers":[
               {
-                "module":"zerossl",
+                "module": "acme",
+                "email": "${EMAIL_ADDRESS}",
+                "ca": "https://acme.zerossl.com/v2/DV90",
+                "external_account": {
+                  "key_id": "${ZEROSSL_KEY_ID}",
+                  "mac_key": "${ZEROSSL_MAC_KEY}"
+                },
                 "challenges":{
                   "dns":{
                     "provider":{
